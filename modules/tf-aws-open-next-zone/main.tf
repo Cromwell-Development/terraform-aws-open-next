@@ -281,29 +281,113 @@ resource "aws_s3_bucket" "bucket" {
 }
 
 resource "aws_s3_bucket_policy" "bucket_policy" {
-  count = local.should_create_website_bucket && var.website_bucket.create_bucket_policy == true && local.create_distribution ? 1 : 0
+  count = local.should_create_website_bucket && var.website_bucket.create_bucket_policy && local.create_distribution ? 1 : 0
 
   bucket = one(aws_s3_bucket.bucket[*].id)
-  policy = jsonencode({
-    "Version" : "2012-10-17",
-    "Statement" : [
-      {
-        "Principal" : {
-          "Service" : "cloudfront.amazonaws.com"
-        },
-        "Action" : [
+  policy = data.aws_iam_policy_document.combined[0].json
+}
+
+data "aws_iam_policy_document" "combined" {
+  count = local.should_create_website_bucket && var.website_bucket.create_bucket_policy && local.create_distribution ? 1 : 0
+
+  source_policy_documents = compact([
+    var.website_bucket.create_bucket_policy ? data.aws_iam_policy_document.bucket_policy[0].json : "",
+    var.website_bucket.deny_insecure_transport ? data.aws_iam_policy_document.deny_insecure_transport[0].json : "",
+    var.website_bucket.deny_outdated_tls ? data.aws_iam_policy_document.deny_outdated_tls[0].json : ""
+  ])
+}
+
+data "aws_iam_policy_document" "bucket_policy" {
+  count = local.should_create_website_bucket && var.website_bucket.create_bucket_policy && local.create_distribution ? 1 : 0
+
+    statement {
+    sid    = "AllowCloudFront"
+    effect = "Allow"
+
+    actions = [
           "s3:GetObject"
-        ],
-        "Resource" : "${one(aws_s3_bucket.bucket[*].arn)}/*",
-        "Effect" : "Allow",
-        "Condition" : {
-          "StringEquals" : {
-            "AWS:SourceArn" : compact([try(one(module.public_resources[*].arn), null), try(one(module.public_resources[*].staging_arn), null)])
-          }
-        }
-      }
+        ]
+
+    resources = [
+          one(aws_s3_bucket.bucket[*].arn),
+          "${one(aws_s3_bucket.bucket[*].arn)}/*"
     ]
-  })
+    
+    principals {
+      type        = "Service"
+      identifiers = ["cloudfront.amazonaws.com"]
+    }
+
+    condition {
+    test = "StringEquals"
+    variable = "AWS:SourceArn"
+    values = [
+      "compact([try(one(module.public_resources[*].arn), null), try(one(module.public_resources[*].staging_arn), null)])"
+    ]
+          }
+    }
+}
+
+data "aws_iam_policy_document" "deny_insecure_transport" {
+  count = local.should_create_website_bucket && var.website_bucket.create_bucket_policy && var.website_bucket.deny_insecure_transport && local.create_distribution ? 1 : 0
+
+  statement {
+    sid    = "denyInsecureTransport"
+    effect = "Deny"
+
+    actions = [
+      "s3:*",
+    ]
+
+    resources = [
+       one(aws_s3_bucket.bucket[*].arn),
+       "${one(aws_s3_bucket.bucket[*].arn)}/*"
+    ]
+
+    principals {
+      type        = "*"
+      identifiers = ["*"]
+    }
+
+    condition {
+      test     = "Bool"
+      variable = "aws:SecureTransport"
+      values = [
+        "false"
+      ]
+    }
+  }
+}
+
+data "aws_iam_policy_document" "deny_outdated_tls" {
+  count = local.should_create_website_bucket && var.website_bucket.create_bucket_policy && var.website_bucket.deny_outdated_tls == true && local.create_distribution ? 1 : 0
+
+  statement {
+    sid    = "denyOutdatedTLS"
+    effect = "Deny"
+
+    actions = [
+      "s3:*",
+    ]
+
+    resources = [
+     one(aws_s3_bucket.bucket[*].arn),
+     "${one(aws_s3_bucket.bucket[*].arn)}/*"
+    ]
+
+    principals {
+      type        = "*"
+      identifiers = ["*"]
+    }
+
+    condition {
+      test     = "NumericLessThan"
+      variable = "s3:TlsVersion"
+      values = [
+        "1.2"
+      ]
+    }
+  }
 }
 
 module "s3_assets" {
