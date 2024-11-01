@@ -306,6 +306,16 @@ resource "aws_s3_bucket_policy" "bucket_policy" {
   })
 }
 
+resource "aws_s3_bucket_public_access_block" "bucket_public_access_block_public_policy" {
+  count         = local.should_create_website_bucket ? 1 : 0
+  bucket        = "${local.prefix}website-bucket${local.suffix}"
+
+  block_public_acls       = var.website_bucket.block_public_acls
+  block_public_policy     = var.website_bucket.block_public_policy
+  ignore_public_acls      = var.website_bucket.ignore_public_acls
+  restrict_public_buckets = var.website_bucket.restrict_public_buckets
+}
+
 module "s3_assets" {
   source = "../tf-aws-open-next-s3-assets"
 
