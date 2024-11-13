@@ -227,6 +227,10 @@ module "public_resources" {
   auth_function             = var.distribution.auth_function
   lambda_url_oac            = var.distribution.lambda_url_oac
   cache_policy              = var.distribution.cache_policy
+  logging_enabled = var.distribution.logging_enabled
+  logging_include_cookies = var.distribution.logging_include_cookies
+  logging_bucket_domain_name = var.distribution.logging_bucket_domain_name
+  logging_bucket_prefix = var.distribution.logging_bucket_prefix
 
   behaviours            = local.zone_behaviours
   waf                   = var.waf
