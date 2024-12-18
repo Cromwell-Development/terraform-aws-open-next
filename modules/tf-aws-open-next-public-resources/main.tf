@@ -366,8 +366,11 @@ locals {
     } if additional_rule.enabled] : []
   )
 
-  temp_aliases = var.domain_config != null ? concat(formatlist(join(".", compact([var.domain_config.sub_domain, "%s"])), distinct([for hosted_zone in var.domain_config.hosted_zones : hosted_zone.name]))) : []
-  aliases      = try(var.domain_config.include_www, false) == true ? flatten([for alias in local.temp_aliases : [alias, "www.${alias}"]]...) : local.temp_aliases
+  temp_aliases = var.domain_config != null ? {
+  for hosted_zone in var.domain_config.hosted_zones :
+  join(".", compact([var.domain_config.sub_domain, hosted_zone.name])) => {alias = distinct (flatten([hosted_zone.alias,var.domain_config.include_www || hosted_zone.include_www ? ["www2"] : []])), include_www = hosted_zone.include_www}
+  } : {}
+  aliases = flatten (concat([for alias, v in local.temp_aliases : [for sub in v.alias : "${sub}.${alias}"]] , [for alias, v in local.temp_aliases : alias]))
   temp_route53_entries = try(var.domain_config.create_route53_entries, false) == true ? { for hosted_zone in var.domain_config.hosted_zones : join("-", compact([hosted_zone.name, hosted_zone.id, hosted_zone.private_zone])) => {
     name            = join(".", compact([var.domain_config.sub_domain, hosted_zone.name]))
     zone_id         = coalesce(hosted_zone.id, try(data.aws_route53_zone.hosted_zone[join("-", compact([hosted_zone.name, hosted_zone.private_zone]))].zone_id, null))
