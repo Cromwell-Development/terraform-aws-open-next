@@ -368,7 +368,7 @@ locals {
 
   temp_aliases = var.domain_config != null ? {
   for hosted_zone in var.domain_config.hosted_zones :
-  join(".", compact([var.domain_config.sub_domain, hosted_zone.name])) => {alias = distinct (flatten([hosted_zone.alias,var.domain_config.include_www || hosted_zone.include_www ? ["www2"] : []])), include_www = hosted_zone.include_www}
+  join(".", compact([var.domain_config.sub_domain, hosted_zone.name])) => {alias = distinct (flatten([hosted_zone.alias,var.domain_config.include_www || hosted_zone.include_www ? ["www"] : []])), include_www = hosted_zone.include_www}
   } : {}
   aliases = flatten (concat([for alias, v in local.temp_aliases : [for sub in v.alias : "${sub}.${alias}"]] , [for alias, v in local.temp_aliases : alias]))
   temp_route53_entries = try(var.domain_config.create_route53_entries, false) == true ? { for hosted_zone in var.domain_config.hosted_zones : join("-", compact([hosted_zone.name, hosted_zone.id, hosted_zone.private_zone])) => {
