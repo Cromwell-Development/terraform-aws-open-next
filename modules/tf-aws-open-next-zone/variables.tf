@@ -697,7 +697,7 @@ EOF
     versioning           = optional(string, "Disabled")
   })
   default = {}
-    validation {
+  validation {
     condition     = contains(["Enabled", "Suspended", "Disabled"], var.website_bucket.versioning)
     error_message = "The versioning value can be one of Enabled, Suspended or Disabled"
   }
