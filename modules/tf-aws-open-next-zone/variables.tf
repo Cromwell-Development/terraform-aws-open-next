@@ -720,6 +720,12 @@ EOF
   default = {}
 }
 
+variable "sqs_managed_sse_enabled" {
+  description = "Boolean enabling server-side encryption (SSE)"
+  type        = bool
+  default     = true
+}
+
 variable "tag_mapping_db" {
   description = <<EOF
 Configuration for the ISR tag mapping database
