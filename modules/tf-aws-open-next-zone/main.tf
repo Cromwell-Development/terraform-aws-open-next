@@ -338,9 +338,7 @@ data "aws_iam_policy_document" "bucket_policy" {
     condition {
       test     = "StringEquals"
       variable = "AWS:SourceArn"
-      values = [
-        "compact([try(one(module.public_resources[*].arn), null), try(one(module.public_resources[*].staging_arn), null)])"
-      ]
+      values   = compact([try(one(module.public_resources[*].arn), null), try(one(module.public_resources[*].staging_arn), null)])
     }
   }
 }
