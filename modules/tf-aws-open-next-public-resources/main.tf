@@ -9,6 +9,9 @@ locals {
   create_cache_policy = try(var.cache_policy.deployment, "CREATE") == "CREATE"
   cache_policy_id     = local.create_cache_policy ? one(aws_cloudfront_cache_policy.cache_policy[*].id) : try(var.cache_policy.id, null)
 
+  create_response_headers    = try(var.response_headers.deployment, "NONE") == "CREATE"
+  response_headers_policy_id = local.create_response_headers ? one(aws_cloudfront_response_headers_policy.response_headers[*].id) : try(var.response_headers.id, null)
+
   cache_keys = {
     v2 = ["accept", "rsc", "next-router-prefetch", "next-router-state-tree", "next-url", "x-prerender-bypass", "x-prerender-revalidate"]
     v3 = ["x-open-next-cache-key"]
@@ -41,6 +44,8 @@ locals {
         cache_policy_id          = coalesce(try(var.behaviours.custom_error_responses.path_overrides[custom_error_response.path_pattern].cache_policy_id, null), try(var.behaviours.custom_error_responses.cache_policy_id, null), data.aws_cloudfront_cache_policy.caching_optimized.id)
         origin_request_policy_id = try(coalesce(try(var.behaviours.custom_error_responses.path_overrides[custom_error_response.path_pattern].origin_request_policy_id, null), try(var.behaviours.custom_error_responses.origin_request_policy_id, null)), null)
 
+        response_headers_policy_id = try(coalesce(try(var.behaviours.custom_error_responses.path_overrides[custom_error_response.path_pattern].response_headers_policy_id, null), try(var.behaviours.custom_error_responses.response_headers_policy_id, null), local.response_headers_policy_id), null)
+
         compress               = coalesce(try(var.behaviours.custom_error_responses.path_overrides[custom_error_response.path_pattern].compress, null), try(var.behaviours.custom_error_responses.compress, null), true)
         viewer_protocol_policy = coalesce(try(var.behaviours.custom_error_responses.path_overrides[custom_error_response.path_pattern].viewer_protocol_policy, null), try(var.behaviours.custom_error_responses.viewer_protocol_policy, null), "redirect-to-https")
 
@@ -68,6 +73,8 @@ locals {
           cache_policy_id          = coalesce(try(var.behaviours.image_optimisation.path_overrides[image_optimisation_behaviour.formatted].cache_policy_id, null), try(var.behaviours.image_optimisation.zone_overrides[zone.name].path_overrides[image_optimisation_behaviour.original].cache_policy_id, null), try(var.behaviours.image_optimisation.zone_overrides[zone.name].cache_policy_id, null), try(var.behaviours.image_optimisation.cache_policy_id, null), local.cache_policy_id)
           origin_request_policy_id = coalesce(try(var.behaviours.image_optimisation.path_overrides[image_optimisation_behaviour.formatted].origin_request_policy_id, null), try(var.behaviours.image_optimisation.zone_overrides[zone.name].path_overrides[image_optimisation_behaviour.original].origin_request_policy_id, null), try(var.behaviours.image_optimisation.zone_overrides[zone.name].origin_request_policy_id, null), try(var.behaviours.image_optimisation.origin_request_policy_id, null), data.aws_cloudfront_origin_request_policy.all_viewer_except_host_header.id)
 
+          response_headers_policy_id = try(coalesce(try(var.behaviours.image_optimisation.path_overrides[image_optimisation_behaviour.formatted].response_headers_policy_id, null), try(var.behaviours.image_optimisation.zone_overrides[zone.name].path_overrides[image_optimisation_behaviour.original].response_headers_policy_id, null), try(var.behaviours.image_optimisation.zone_overrides[zone.name].response_headers_policy_id, null), try(var.behaviours.image_optimisation.response_headers_policy_id, null), local.response_headers_policy_id), null)
+
           compress               = coalesce(try(var.behaviours.image_optimisation.path_overrides[image_optimisation_behaviour.formatted].compress, null), try(var.behaviours.image_optimisation.zone_overrides[zone.name].path_overrides[image_optimisation_behaviour.original].compress, null), try(var.behaviours.image_optimisation.zone_overrides[zone.name].compress, null), try(var.behaviours.image_optimisation.compress, null), true)
           viewer_protocol_policy = coalesce(try(var.behaviours.image_optimisation.path_overrides[image_optimisation_behaviour.formatted].viewer_protocol_policy, null), try(var.behaviours.image_optimisation.zone_overrides[zone.name].path_overrides[image_optimisation_behaviour.original].viewer_protocol_policy, null), try(var.behaviours.image_optimisation.zone_overrides[zone.name].viewer_protocol_policy, null), try(var.behaviours.image_optimisation.viewer_protocol_policy, null), "redirect-to-https")
 
@@ -91,6 +98,8 @@ locals {
 
           cache_policy_id          = coalesce(try(origin.path_overrides[additional_origin_behaviour].cache_policy_id, null), try(origin.cache_policy_id, null), local.cache_policy_id)
           origin_request_policy_id = coalesce(try(origin.path_overrides[additional_origin_behaviour].origin_request_policy_id, null), try(origin.origin_request_policy_id, null), data.aws_cloudfront_origin_request_policy.all_viewer_except_host_header.id)
+
+          response_headers_policy_id = try(coalesce(try(origin.path_overrides[additional_origin_behaviour].response_headers_policy_id, null), try(origin.response_headers_policy_id, null), local.response_headers_policy_id), null)
 
           compress               = coalesce(try(origin.path_overrides[additional_origin_behaviour].compress, null), try(origin.compress, null), true)
           viewer_protocol_policy = coalesce(try(origin.path_overrides[additional_origin_behaviour].viewer_protocol_policy, null), try(origin.viewer_protocol_policy, null), "redirect-to-https")
@@ -117,6 +126,8 @@ locals {
           cache_policy_id          = coalesce(try(var.behaviours.server.path_overrides[server_behaviour.formatted].cache_policy_id, null), try(var.behaviours.server.zone_overrides[zone.name].path_overrides[server_behaviour.original].cache_policy_id, null), try(var.behaviours.server.zone_overrides[zone.name].cache_policy_id, null), try(var.behaviours.server.cache_policy_id, null), local.cache_policy_id)
           origin_request_policy_id = coalesce(try(var.behaviours.server.path_overrides[server_behaviour.formatted].origin_request_policy_id, null), try(var.behaviours.server.zone_overrides[zone.name].path_overrides[server_behaviour.original].origin_request_policy_id, null), try(var.behaviours.server.zone_overrides[zone.name].origin_request_policy_id, null), try(var.behaviours.server.origin_request_policy_id, null), data.aws_cloudfront_origin_request_policy.all_viewer_except_host_header.id)
 
+          response_headers_policy_id = try(coalesce(try(var.behaviours.server.path_overrides[server_behaviour.formatted].response_headers_policy_id, null), try(var.behaviours.server.zone_overrides[zone.name].path_overrides[server_behaviour.original].response_headers_policy_id, null), try(var.behaviours.server.zone_overrides[zone.name].response_headers_policy_id, null), try(var.behaviours.server.response_headers_policy_id, null), local.response_headers_policy_id), null)
+
           compress               = coalesce(try(var.behaviours.server.path_overrides[server_behaviour.formatted].compress, null), try(var.behaviours.server.zone_overrides[zone.name].path_overrides[server_behaviour.original].compress, null), try(var.behaviours.server.zone_overrides[zone.name].compress, null), try(var.behaviours.server.compress, null), true)
           viewer_protocol_policy = coalesce(try(var.behaviours.server.path_overrides[server_behaviour.formatted].viewer_protocol_policy, null), try(var.behaviours.server.zone_overrides[zone.name].path_overrides[server_behaviour.original].viewer_protocol_policy, null), try(var.behaviours.server.zone_overrides[zone.name].viewer_protocol_policy, null), try(var.behaviours.server.viewer_protocol_policy, null), "redirect-to-https")
 
@@ -140,6 +151,8 @@ locals {
 
           cache_policy_id          = coalesce(try(var.behaviours.static_assets.path_overrides[static_assets_behaviour.formatted].cache_policy_id, null), try(var.behaviours.static_assets.zone_overrides[zone.name].path_overrides[static_assets_behaviour.original].cache_policy_id, null), try(var.behaviours.static_assets.zone_overrides[zone.name].cache_policy_id, null), try(var.behaviours.static_assets.cache_policy_id, null), data.aws_cloudfront_cache_policy.caching_optimized.id)
           origin_request_policy_id = try(coalesce(try(var.behaviours.static_assets.path_overrides[static_assets_behaviour.formatted].origin_request_policy_id, null), try(var.behaviours.static_assets.zone_overrides[zone.name].path_overrides[static_assets_behaviour.original].origin_request_policy_id, null), try(var.behaviours.static_assets.zone_overrides[zone.name].origin_request_policy_id, null), try(var.behaviours.static_assets.origin_request_policy_id, null)), null)
+
+          response_headers_policy_id = try(coalesce(try(var.behaviours.static_assets.path_overrides[static_assets_behaviour.formatted].response_headers_policy_id, null), try(var.behaviours.static_assets.zone_overrides[zone.name].path_overrides[static_assets_behaviour.original].response_headers_policy_id, null), try(var.behaviours.static_assets.zone_overrides[zone.name].response_headers_policy_id, null), try(var.behaviours.static_assets.response_headers_policy_id, null), local.response_headers_policy_id), null)
 
           compress               = coalesce(try(var.behaviours.static_assets.path_overrides[static_assets_behaviour.formatted].compress, null), try(var.behaviours.static_assets.zone_overrides[zone.name].path_overrides[static_assets_behaviour.original].compress, null), try(var.behaviours.static_assets.zone_overrides[zone.name].compress, null), try(var.behaviours.static_assets.compress, null), true)
           viewer_protocol_policy = coalesce(try(var.behaviours.static_assets.path_overrides[static_assets_behaviour.formatted].viewer_protocol_policy, null), try(var.behaviours.static_assets.zone_overrides[zone.name].path_overrides[static_assets_behaviour.original].viewer_protocol_policy, null), try(var.behaviours.static_assets.zone_overrides[zone.name].viewer_protocol_policy, null), try(var.behaviours.static_assets.viewer_protocol_policy, null), "redirect-to-https")
@@ -165,6 +178,8 @@ locals {
 
           cache_policy_id          = coalesce(try(var.behaviours.server.path_overrides[server_behaviour.formatted].cache_policy_id, null), try(var.behaviours.server.zone_overrides[zone.name].path_overrides[server_behaviour.original].cache_policy_id, null), try(var.behaviours.server.zone_overrides[zone.name].cache_policy_id, null), try(var.behaviours.server.cache_policy_id, null), local.cache_policy_id)
           origin_request_policy_id = coalesce(try(var.behaviours.server.path_overrides[server_behaviour.formatted].origin_request_policy_id, null), try(var.behaviours.server.zone_overrides[zone.name].path_overrides[server_behaviour.original].origin_request_policy_id, null), try(var.behaviours.server.zone_overrides[zone.name].origin_request_policy_id, null), try(var.behaviours.server.origin_request_policy_id, null), data.aws_cloudfront_origin_request_policy.all_viewer_except_host_header.id)
+
+          response_headers_policy_id = try(coalesce(try(var.behaviours.server.path_overrides[server_behaviour.formatted].response_headers_policy_id, null), try(var.behaviours.server.zone_overrides[zone.name].path_overrides[server_behaviour.original].response_headers_policy_id, null), try(var.behaviours.server.zone_overrides[zone.name].response_headers_policy_id, null), try(var.behaviours.server.response_headers_policy_id, null), local.response_headers_policy_id), null)
 
           compress               = coalesce(try(var.behaviours.server.path_overrides[server_behaviour.formatted].compress, null), try(var.behaviours.server.zone_overrides[zone.name].path_overrides[server_behaviour.original].compress, null), try(var.behaviours.server.zone_overrides[zone.name].compress, null), try(var.behaviours.server.compress, null), true)
           viewer_protocol_policy = coalesce(try(var.behaviours.server.path_overrides[server_behaviour.formatted].viewer_protocol_policy, null), try(var.behaviours.server.zone_overrides[zone.name].path_overrides[server_behaviour.original].viewer_protocol_policy, null), try(var.behaviours.server.zone_overrides[zone.name].viewer_protocol_policy, null), try(var.behaviours.server.viewer_protocol_policy, null), "redirect-to-https")
@@ -194,6 +209,8 @@ locals {
         origin_path              = "${local.root_zones.path != null ? "/${local.root_zones.path}" : ""}/${custom_error_response.response_page.folder_path}"
         origin_headers           = null
         custom_origin_config     = null
+        connection_attempts      = null
+        connection_timeout       = null
       }
     ],
     flatten([
@@ -204,6 +221,8 @@ locals {
         origin_path              = zone.origins["static_assets"].path
         origin_headers           = null
         custom_origin_config     = null
+        connection_attempts      = null
+        connection_timeout       = null
         }],
         [for name, origin in zone.origins : {
           domain_name              = origin.domain_name
@@ -212,11 +231,15 @@ locals {
           origin_path              = origin.path
           origin_headers           = origin.headers
           custom_origin_config = {
-            http_port              = 80
-            https_port             = 443
-            origin_protocol_policy = "https-only"
-            origin_ssl_protocols   = ["TLSv1.2"]
+            http_port                = 80
+            https_port               = 443
+            origin_protocol_policy   = "https-only"
+            origin_ssl_protocols     = ["TLSv1.2"]
+            origin_keepalive_timeout = origin.keepalive_timeout
+            origin_read_timeout      = origin.read_timeout
           }
+          connection_attempts = origin.connection_attempts
+          connection_timeout  = origin.connection_timeout
         } if contains(["static_assets", "image_optimisation"], name) == false],
         lookup(zone.origins, "image_optimisation", null) == null ? [] : [{
           domain_name              = zone.origins["image_optimisation"].domain_name
@@ -225,11 +248,15 @@ locals {
           origin_path              = null
           origin_headers           = null
           custom_origin_config = {
-            http_port              = 80
-            https_port             = 443
-            origin_protocol_policy = "https-only"
-            origin_ssl_protocols   = ["TLSv1.2"]
+            http_port                = 80
+            https_port               = 443
+            origin_protocol_policy   = "https-only"
+            origin_ssl_protocols     = ["TLSv1.2"]
+            origin_keepalive_timeout = zone.origins["image_optimisation"].keepalive_timeout
+            origin_read_timeout      = zone.origins["image_optimisation"].read_timeout
           }
+          connection_attempts = zone.origins["image_optimisation"].connection_attempts
+          connection_timeout  = zone.origins["image_optimisation"].connection_timeout
       }])
     ])
   )
@@ -366,14 +393,23 @@ locals {
     } if additional_rule.enabled] : []
   )
 
-  temp_aliases = var.domain_config != null ? concat(formatlist(join(".", compact([var.domain_config.sub_domain, "%s"])), distinct([for hosted_zone in var.domain_config.hosted_zones : hosted_zone.name]))) : []
-  aliases      = try(var.domain_config.include_www, false) == true ? flatten([for alias in local.temp_aliases : [alias, "www.${alias}"]]...) : local.temp_aliases
+  temp_aliases = var.domain_config != null ? {
+    for hosted_zone in var.domain_config.hosted_zones :
+    join(".", compact([var.domain_config.sub_domain, hosted_zone.name])) => { alias = distinct(flatten([hosted_zone.alias, var.domain_config.include_www || hosted_zone.include_www ? ["www"] : []])), include_www = hosted_zone.include_www }
+  } : {}
+  aliases = flatten(concat([for alias, v in local.temp_aliases : [for sub in v.alias : "${sub}.${alias}"]], [for alias, v in local.temp_aliases : alias]))
   temp_route53_entries = try(var.domain_config.create_route53_entries, false) == true ? { for hosted_zone in var.domain_config.hosted_zones : join("-", compact([hosted_zone.name, hosted_zone.id, hosted_zone.private_zone])) => {
     name            = join(".", compact([var.domain_config.sub_domain, hosted_zone.name]))
-    zone_id         = coalesce(hosted_zone.id, data.aws_route53_zone.hosted_zone[join("-", compact([hosted_zone.name, hosted_zone.private_zone]))].zone_id)
+    zone_id         = coalesce(hosted_zone.id, try(data.aws_route53_zone.hosted_zone[join("-", compact([hosted_zone.name, hosted_zone.private_zone]))].zone_id, null))
     allow_overwrite = var.domain_config.route53_record_allow_overwrite
   } } : {}
-  route53_entries = try(var.domain_config.include_www, false) == true ? merge([for name, route53_details in local.temp_route53_entries : { "${name}" = route53_details, "www_${name}" = { name = "www.${route53_details.name}", zone_id = route53_details.zone_id, allow_overwrite = route53_details.allow_overwrite } }]...) : local.temp_route53_entries
+  route53_entries = merge({ for index, route53_entry in flatten(var.domain_config != null ? [for hosted_zone in var.domain_config.hosted_zones : [for alias in distinct(flatten([hosted_zone.alias, var.domain_config.include_www ||
+    hosted_zone.include_www ? ["www"] : []])) : tomap({
+    id              = "${alias}_${join("-", compact([hosted_zone.name, hosted_zone.id, hosted_zone.private_zone]))}",
+    name            = join(".", compact([alias, var.domain_config.sub_domain, hosted_zone.name]))
+    zone_id         = coalesce(hosted_zone.id, try(data.aws_route53_zone.hosted_zone[join("-", compact([hosted_zone.name, hosted_zone.private_zone]))].zone_id, null)),
+    allow_overwrite = var.domain_config.route53_record_allow_overwrite
+  })]] : []) : route53_entry.id => { name = route53_entry.name, zone_id = route53_entry.zone_id, allow_overwrite = route53_entry.allow_overwrite } }, local.temp_route53_entries)
 }
 
 # Functions
@@ -481,6 +517,147 @@ resource "aws_cloudfront_cache_policy" "cache_policy" {
     query_strings_config {
       query_string_behavior = try(var.cache_policy.query_string_behavior, "all")
     }
+
+    enable_accept_encoding_brotli = try(var.cache_policy.enable_accept_encoding_brotli, null)
+    enable_accept_encoding_gzip   = try(var.cache_policy.enable_accept_encoding_gzip, null)
+  }
+}
+
+resource "aws_cloudfront_response_headers_policy" "response_headers" {
+  count = var.response_headers.deployment == "DETACH" || local.create_response_headers ? 1 : 0
+  name  = "${local.prefix}response-headers${local.suffix}"
+
+  dynamic "cors_config" {
+    for_each = try(var.response_headers.cors_config, null) != null ? [true] : []
+
+    content {
+      access_control_allow_credentials = try(var.response_headers.cors_config.access_control_allow_credentials, null)
+
+      access_control_allow_headers {
+        items = try(var.response_headers.cors_config.access_control_allow_headers, [])
+      }
+
+      access_control_allow_methods {
+        items = try(var.response_headers.cors_config.access_control_allow_methods, [])
+      }
+
+      access_control_allow_origins {
+        items = try(var.response_headers.cors_config.access_control_allow_origins, [])
+      }
+
+      dynamic "access_control_expose_headers" {
+        for_each = length(var.response_headers.cors_config.access_control_expose_headers) > 0 ? [true] : []
+
+        content {
+          items = var.response_headers.cors_config.access_control_expose_headers
+        }
+      }
+
+      access_control_max_age_sec = try(var.response_headers.cors_config.access_control_max_age_sec, null)
+
+      origin_override = var.response_headers.cors_config.origin_override
+    }
+  }
+
+  dynamic "custom_headers_config" {
+    for_each = length(var.response_headers.custom_headers_config) > 0 ? [true] : []
+
+    content {
+      dynamic "items" {
+        for_each = var.response_headers.custom_headers_config
+
+        content {
+          header   = items.value.header
+          override = items.value.override
+          value    = items.value.value
+        }
+      }
+    }
+  }
+
+  dynamic "remove_headers_config" {
+    for_each = length(var.response_headers.remove_headers) > 0 ? [true] : []
+
+    content {
+      dynamic "items" {
+        for_each = var.response_headers.remove_headers
+
+        content {
+          header = items.value
+        }
+      }
+    }
+  }
+
+  dynamic "security_headers_config" {
+    for_each = try(var.response_headers.security_headers_config, null) != null ? [true] : []
+
+    content {
+      dynamic "content_security_policy" {
+        for_each = try(var.response_headers.security_headers_config.content_security_policy, null) != null ? [var.response_headers.security_headers_config.content_security_policy] : []
+
+        content {
+          content_security_policy = content_security_policy.value.policy
+          override                = content_security_policy.value.override
+        }
+      }
+
+      dynamic "content_type_options" {
+        for_each = try(var.response_headers.security_headers_config.content_type_options, null) != null ? [var.response_headers.security_headers_config.content_type_options] : []
+
+        content {
+          override = content_type_options.value.override
+        }
+      }
+
+      dynamic "frame_options" {
+        for_each = try(var.response_headers.security_headers_config.frame_options, null) != null ? [var.response_headers.security_headers_config.frame_options] : []
+        content {
+          frame_option = frame_options.value.frame_option
+          override     = frame_options.value.override
+        }
+      }
+
+      dynamic "referrer_policy" {
+        for_each = try(var.response_headers.security_headers_config.referrer_policy, null) != null ? [var.response_headers.security_headers_config.referrer_policy] : []
+
+        content {
+          referrer_policy = referrer_policy.value.policy
+          override        = referrer_policy.value.override
+        }
+      }
+
+      dynamic "strict_transport_security" {
+        for_each = try(var.response_headers.security_headers_config.strict_transport_security, null) != null ? [var.response_headers.security_headers_config.strict_transport_security] : []
+
+        content {
+          access_control_max_age_sec = strict_transport_security.value.max_age
+          include_subdomains         = strict_transport_security.value.include_subdomains
+          override                   = strict_transport_security.value.override
+          preload                    = strict_transport_security.value.preload
+        }
+      }
+
+      dynamic "xss_protection" {
+        for_each = try(var.response_headers.security_headers_config.xss_protection, null) != null ? [var.response_headers.security_headers_config.xss_protection] : []
+
+        content {
+          mode_block = xss_protection.value.mode_block
+          override   = xss_protection.value.override
+          protection = xss_protection.value.protection
+          report_uri = xss_protection.value.report_uri
+        }
+      }
+    }
+  }
+
+  dynamic "server_timing_headers_config" {
+    for_each = try(var.response_headers.server_timing_headers_config, null) != null ? [var.response_headers.server_timing_headers_config] : []
+
+    content {
+      enabled       = server_timing_headers_config.value.enabled
+      sampling_rate = server_timing_headers_config.value.sampling_rate
+    }
   }
 }
 
@@ -495,6 +672,8 @@ resource "aws_cloudfront_distribution" "website_distribution" {
       origin_access_control_id = origin.value.origin_access_control_id
       origin_id                = origin.value.origin_id
       origin_path              = origin.value.origin_path
+      connection_attempts      = origin.value.connection_attempts
+      connection_timeout       = origin.value.connection_timeout
 
       dynamic "custom_header" {
         for_each = coalesce(origin.value.origin_headers, {})
@@ -509,10 +688,12 @@ resource "aws_cloudfront_distribution" "website_distribution" {
         for_each = origin.value.custom_origin_config != null ? [true] : []
 
         content {
-          http_port              = origin.value.custom_origin_config.http_port
-          https_port             = origin.value.custom_origin_config.https_port
-          origin_protocol_policy = origin.value.custom_origin_config.origin_protocol_policy
-          origin_ssl_protocols   = origin.value.custom_origin_config.origin_ssl_protocols
+          http_port                = origin.value.custom_origin_config.http_port
+          https_port               = origin.value.custom_origin_config.https_port
+          origin_protocol_policy   = origin.value.custom_origin_config.origin_protocol_policy
+          origin_ssl_protocols     = origin.value.custom_origin_config.origin_ssl_protocols
+          origin_keepalive_timeout = origin.value.custom_origin_config.origin_keepalive_timeout
+          origin_read_timeout      = origin.value.custom_origin_config.origin_read_timeout
         }
       }
     }
@@ -534,6 +715,8 @@ resource "aws_cloudfront_distribution" "website_distribution" {
 
       cache_policy_id          = ordered_cache_behavior.value.cache_policy_id
       origin_request_policy_id = ordered_cache_behavior.value.origin_request_policy_id
+
+      response_headers_policy_id = ordered_cache_behavior.value.response_headers_policy_id
 
       compress               = ordered_cache_behavior.value.compress
       viewer_protocol_policy = ordered_cache_behavior.value.viewer_protocol_policy
@@ -569,6 +752,8 @@ resource "aws_cloudfront_distribution" "website_distribution" {
 
       cache_policy_id          = default_cache_behavior.value.cache_policy_id
       origin_request_policy_id = default_cache_behavior.value.origin_request_policy_id
+
+      response_headers_policy_id = default_cache_behavior.value.response_headers_policy_id
 
       compress               = default_cache_behavior.value.compress
       viewer_protocol_policy = default_cache_behavior.value.viewer_protocol_policy
@@ -637,6 +822,8 @@ resource "aws_cloudfront_distribution" "production_distribution" {
       origin_access_control_id = origin.value.origin_access_control_id
       origin_id                = origin.value.origin_id
       origin_path              = origin.value.origin_path
+      connection_attempts      = origin.value.connection_attempts
+      connection_timeout       = origin.value.connection_timeout
 
       dynamic "custom_header" {
         for_each = coalesce(origin.value.origin_headers, {})
@@ -651,10 +838,12 @@ resource "aws_cloudfront_distribution" "production_distribution" {
         for_each = origin.value.custom_origin_config != null ? [true] : []
 
         content {
-          http_port              = origin.value.custom_origin_config.http_port
-          https_port             = origin.value.custom_origin_config.https_port
-          origin_protocol_policy = origin.value.custom_origin_config.origin_protocol_policy
-          origin_ssl_protocols   = origin.value.custom_origin_config.origin_ssl_protocols
+          http_port                = origin.value.custom_origin_config.http_port
+          https_port               = origin.value.custom_origin_config.https_port
+          origin_protocol_policy   = origin.value.custom_origin_config.origin_protocol_policy
+          origin_ssl_protocols     = origin.value.custom_origin_config.origin_ssl_protocols
+          origin_keepalive_timeout = origin.value.custom_origin_config.origin_keepalive_timeout
+          origin_read_timeout      = origin.value.custom_origin_config.origin_read_timeout
         }
       }
     }
@@ -678,6 +867,8 @@ resource "aws_cloudfront_distribution" "production_distribution" {
 
       cache_policy_id          = ordered_cache_behavior.value.cache_policy_id
       origin_request_policy_id = ordered_cache_behavior.value.origin_request_policy_id
+
+      response_headers_policy_id = ordered_cache_behavior.value.response_headers_policy_id
 
       compress               = ordered_cache_behavior.value.compress
       viewer_protocol_policy = ordered_cache_behavior.value.viewer_protocol_policy
@@ -713,6 +904,8 @@ resource "aws_cloudfront_distribution" "production_distribution" {
 
       cache_policy_id          = default_cache_behavior.value.cache_policy_id
       origin_request_policy_id = default_cache_behavior.value.origin_request_policy_id
+
+      response_headers_policy_id = default_cache_behavior.value.response_headers_policy_id
 
       compress               = default_cache_behavior.value.compress
       viewer_protocol_policy = default_cache_behavior.value.viewer_protocol_policy
@@ -785,6 +978,8 @@ resource "aws_cloudfront_distribution" "staging_distribution" {
       origin_access_control_id = origin.value.origin_access_control_id
       origin_id                = origin.value.origin_id
       origin_path              = origin.value.origin_path
+      connection_attempts      = origin.value.connection_attempts
+      connection_timeout       = origin.value.connection_timeout
 
       dynamic "custom_header" {
         for_each = coalesce(origin.value.origin_headers, {})
@@ -799,10 +994,12 @@ resource "aws_cloudfront_distribution" "staging_distribution" {
         for_each = origin.value.custom_origin_config != null ? [true] : []
 
         content {
-          http_port              = origin.value.custom_origin_config.http_port
-          https_port             = origin.value.custom_origin_config.https_port
-          origin_protocol_policy = origin.value.custom_origin_config.origin_protocol_policy
-          origin_ssl_protocols   = origin.value.custom_origin_config.origin_ssl_protocols
+          http_port                = origin.value.custom_origin_config.http_port
+          https_port               = origin.value.custom_origin_config.https_port
+          origin_protocol_policy   = origin.value.custom_origin_config.origin_protocol_policy
+          origin_ssl_protocols     = origin.value.custom_origin_config.origin_ssl_protocols
+          origin_keepalive_timeout = origin.value.custom_origin_config.origin_keepalive_timeout
+          origin_read_timeout      = origin.value.custom_origin_config.origin_read_timeout
         }
       }
     }
@@ -825,6 +1022,8 @@ resource "aws_cloudfront_distribution" "staging_distribution" {
 
       cache_policy_id          = ordered_cache_behavior.value.cache_policy_id
       origin_request_policy_id = ordered_cache_behavior.value.origin_request_policy_id
+
+      response_headers_policy_id = ordered_cache_behavior.value.response_headers_policy_id
 
       compress               = ordered_cache_behavior.value.compress
       viewer_protocol_policy = ordered_cache_behavior.value.viewer_protocol_policy
@@ -860,6 +1059,8 @@ resource "aws_cloudfront_distribution" "staging_distribution" {
 
       cache_policy_id          = default_cache_behavior.value.cache_policy_id
       origin_request_policy_id = default_cache_behavior.value.origin_request_policy_id
+
+      response_headers_policy_id = default_cache_behavior.value.response_headers_policy_id
 
       compress               = default_cache_behavior.value.compress
       viewer_protocol_policy = default_cache_behavior.value.viewer_protocol_policy
