@@ -773,6 +773,8 @@ EOF
     region                  = optional(string)
     name                    = optional(string)
     domain_name             = optional(string)
+    deny_insecure_transport = optional(bool, false)
+    deny_outdated_tls       = optional(bool, false)
     block_public_acls       = optional(bool, true)
     block_public_policy     = optional(bool, true)
     ignore_public_acls      = optional(bool, true)
