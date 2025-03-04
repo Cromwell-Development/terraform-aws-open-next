@@ -62,6 +62,30 @@ variable "x_forwarded_host_function" {
   default = {}
 }
 
+variable "logging_enabled" {
+  description = "Boolean enabling CloudFront Distributions logging"
+  type        = bool
+  default     = false
+}
+
+variable "logging_include_cookies" {
+  description = "Boolean enabling CloudFront Distributions logging to include cookies"
+  type        = bool
+  default     = false
+}
+
+variable "logging_bucket_domain_name" {
+  description = "The Amazon S3 bucket to store the access logs in."
+  type        = string
+  default     = ""
+}
+
+variable "logging_bucket_prefix" {
+  description = "The prefix to use for CloudFront Distributions logs"
+  type        = string
+  default     = ""
+}
+
 variable "auth_function" {
   description = "Configuration for the auth lambda@edge function"
   type = object({

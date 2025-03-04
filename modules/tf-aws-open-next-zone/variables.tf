@@ -972,6 +972,10 @@ EOF
         sampling_rate = number
       }))
     }), {})
+    logging_enabled            = optional(bool, false)
+    logging_include_cookies    = optional(bool, false)
+    logging_bucket_domain_name = optional(string, "")
+    logging_bucket_prefix      = optional(string, "")
   })
   default = {}
 }
