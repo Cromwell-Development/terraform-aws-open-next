@@ -415,6 +415,14 @@ resource "aws_s3_bucket_public_access_block" "bucket_public_access_block_public_
   restrict_public_buckets = var.website_bucket.restrict_public_buckets
 }
 
+resource "aws_s3_bucket_versioning" "website_bucket_versioning" {
+  count  = local.should_create_website_bucket ? 1 : 0
+  bucket = "${local.prefix}website-bucket${local.suffix}"
+  versioning_configuration {
+    status = var.website_bucket.versioning
+  }
+}
+
 module "s3_assets" {
   source = "../tf-aws-open-next-s3-assets"
 

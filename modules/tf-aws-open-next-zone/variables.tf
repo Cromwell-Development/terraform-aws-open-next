@@ -779,6 +779,7 @@ EOF
     region                  = optional(string)
     name                    = optional(string)
     domain_name             = optional(string)
+    versioning              = optional(string, "Disabled")
     deny_insecure_transport = optional(bool, false)
     deny_outdated_tls       = optional(bool, false)
     block_public_acls       = optional(bool, true)
@@ -787,6 +788,10 @@ EOF
     restrict_public_buckets = optional(bool, true)
   })
   default = {}
+  validation {
+    condition     = contains(["Enabled", "Suspended", "Disabled"], var.website_bucket.versioning)
+    error_message = "The versioning value can be one of Enabled, Suspended or Disabled"
+  }
 }
 
 variable "distribution" {
