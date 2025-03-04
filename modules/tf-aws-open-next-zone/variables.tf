@@ -50,6 +50,12 @@ variable "function_architecture" {
   default     = "arm64"
 }
 
+variable "layers" {
+  description = "The default layers that is applied to all regional functions. This can be overridden for each function."
+  type        = list(string)
+  default     = null
+}
+
 variable "iam" {
   description = "The default IAM configuration. This can be overridden for each function."
   type = object({
@@ -95,11 +101,31 @@ EOF
   default = {}
 }
 
+variable "xray_tracing" {
+  description = "The default configuration for AWS tracing on all functions. This can be overridden for each function."
+  type = object({
+    enable = optional(bool, false),
+    mode   = optional(string, "Active")
+  })
+  default = {}
+}
+
 variable "vpc" {
   description = "The default VPC configuration for the lambda resources. This can be overridden for each function."
   type = object({
     security_group_ids = list(string),
     subnet_ids         = list(string)
+  })
+  default = null
+}
+
+variable "origin_timeouts" {
+  description = "The default CloudFront origin timeout settings. This can be overridden for each function that is connected as an origin on the CloudFront distribution i.e. not edge functions."
+  type = object({
+    keepalive_timeout   = optional(number)
+    read_timeout        = optional(number)
+    connection_attempts = optional(number)
+    connection_timeout  = optional(number)
   })
   default = null
 }
@@ -194,6 +220,10 @@ EOF
       name              = optional(string)
       log_group_class   = optional(string)
       skip_destroy      = optional(bool)
+    }))
+    xray_tracing = optional(object({
+      enable = optional(bool, false),
+      mode   = optional(string, "Active")
     }))
     timeouts = optional(object({
       create = optional(string)
@@ -299,7 +329,7 @@ Possible values for backend_deployment_type:
   - REGIONAL_LAMBDA
   - EDGE_LAMBDA (only supported with open next v2)
 
-See https://github.com/RJPearson94/terraform-aws-open-next/blob/v3.0.3/docs/backend-server-deployments.md for a complete breakdown of the different backend options.
+See https://github.com/RJPearson94/terraform-aws-open-next/blob/v3.1.0/docs/backend-server-deployments.md for a complete breakdown of the different backend options.
 
 **NOTE:** When backend_deployment_type is set to EDGE_LAMBDA, Terraform does not manage cloudwatch log groups; instead, the lambda service creates the log group when the function runs in each region.
 
@@ -335,6 +365,7 @@ EOF
     timeout                          = optional(number, 10)
     memory_size                      = optional(number, 1024)
     function_architecture            = optional(string)
+    layers                           = optional(list(string))
     additional_environment_variables = optional(map(string), {})
     additional_iam_policies = optional(list(object({
       name   = string,
@@ -360,6 +391,16 @@ EOF
       name              = optional(string)
       log_group_class   = optional(string)
       skip_destroy      = optional(bool)
+    }))
+    xray_tracing = optional(object({
+      enable = optional(bool, false),
+      mode   = optional(string, "Active")
+    }))
+    origin_timeouts = optional(object({
+      keepalive_timeout   = optional(number)
+      read_timeout        = optional(number)
+      connection_attempts = optional(number)
+      connection_timeout  = optional(number)
     }))
     timeouts = optional(object({
       create = optional(string)
@@ -389,7 +430,7 @@ Possible values for backend_deployment_type:
   - REGIONAL_LAMBDA_WITH_OAC_AND_ANY_PRINCIPAL
   - REGIONAL_LAMBDA
 
-See https://github.com/RJPearson94/terraform-aws-open-next/blob/v3.0.3/docs/backend-server-deployments.md for a complete breakdown of the different backend options.
+See https://github.com/RJPearson94/terraform-aws-open-next/blob/v3.1.0/docs/backend-server-deployments.md for a complete breakdown of the different backend options.
 
 EOF
 
@@ -400,6 +441,7 @@ EOF
     timeout                          = optional(number, 10)
     memory_size                      = optional(number, 1024)
     function_architecture            = optional(string)
+    layers                           = optional(list(string))
     additional_environment_variables = optional(map(string), {})
     iam_policies = optional(object({
       include_bucket_access             = optional(bool, false)
@@ -431,6 +473,16 @@ EOF
       log_group_class   = optional(string)
       skip_destroy      = optional(bool)
     }))
+    xray_tracing = optional(object({
+      enable = optional(bool, false),
+      mode   = optional(string, "Active")
+    }))
+    origin_timeouts = optional(object({
+      keepalive_timeout   = optional(number)
+      read_timeout        = optional(number)
+      connection_attempts = optional(number)
+      connection_timeout  = optional(number)
+    }))
     timeouts = optional(object({
       create = optional(string)
       update = optional(string)
@@ -455,6 +507,7 @@ EOF
       timeout                          = optional(number, 10)
       memory_size                      = optional(number, 1024)
       function_architecture            = optional(string)
+      layers                           = optional(list(string))
       additional_environment_variables = optional(map(string), {})
       iam_policies = optional(object({
         include_bucket_access             = optional(bool, false)
@@ -486,6 +539,16 @@ EOF
         log_group_class   = optional(string)
         skip_destroy      = optional(bool)
       }))
+      xray_tracing = optional(object({
+        enable = optional(bool, false),
+        mode   = optional(string, "Active")
+      }))
+      origin_timeouts = optional(object({
+        keepalive_timeout   = optional(number)
+        read_timeout        = optional(number)
+        connection_attempts = optional(number)
+        connection_timeout  = optional(number)
+      }), {})
       timeouts = optional(object({
         create = optional(string)
         update = optional(string)
@@ -513,7 +576,7 @@ Possible values for backend_deployment_type:
   - REGIONAL_LAMBDA_WITH_OAC_AND_ANY_PRINCIPAL
   - REGIONAL_LAMBDA
 
-See https://github.com/RJPearson94/terraform-aws-open-next/blob/v3.0.3/docs/backend-server-deployments.md for a complete breakdown of the different backend options.
+See https://github.com/RJPearson94/terraform-aws-open-next/blob/v3.1.0/docs/backend-server-deployments.md for a complete breakdown of the different backend options.
 
 If you do not want to provision the image optimisation function, you can set `create` to false.
 
@@ -540,6 +603,7 @@ EOF
     additional_environment_variables = optional(map(string), {})
     function_architecture            = optional(string)
     static_image_optimisation        = optional(bool, false)
+    layers                           = optional(list(string))
     additional_iam_policies = optional(list(object({
       name   = string,
       arn    = optional(string)
@@ -564,6 +628,16 @@ EOF
       name              = optional(string)
       log_group_class   = optional(string)
       skip_destroy      = optional(bool)
+    }))
+    xray_tracing = optional(object({
+      enable = optional(bool, false),
+      mode   = optional(string, "Active")
+    }))
+    origin_timeouts = optional(object({
+      keepalive_timeout   = optional(number)
+      read_timeout        = optional(number)
+      connection_attempts = optional(number)
+      connection_timeout  = optional(number)
     }))
     timeouts = optional(object({
       create = optional(string)
@@ -606,6 +680,7 @@ EOF
     timeout                          = optional(number, 25)
     memory_size                      = optional(number, 1536)
     additional_environment_variables = optional(map(string), {})
+    layers                           = optional(list(string))
     function_architecture            = optional(string)
     additional_iam_policies = optional(list(object({
       name   = string,
@@ -631,6 +706,10 @@ EOF
       name              = optional(string)
       log_group_class   = optional(string)
       skip_destroy      = optional(bool)
+    }))
+    xray_tracing = optional(object({
+      enable = optional(bool, false),
+      mode   = optional(string, "Active")
     }))
     timeouts = optional(object({
       create = optional(string)
@@ -696,6 +775,10 @@ EOF
     domain_name             = optional(string)
     deny_insecure_transport = optional(bool, false)
     deny_outdated_tls       = optional(bool, false)
+    block_public_acls       = optional(bool, true)
+    block_public_policy     = optional(bool, true)
+    ignore_public_acls      = optional(bool, true)
+    restrict_public_buckets = optional(bool, true)
   })
   default = {}
 }
@@ -708,7 +791,7 @@ Possible values for deployment are:
 - NONE
 - CREATE
 
-The module has a local copy of the x-forwarded host CloudFront function code by default. The code can be seen at https://github.com/RJPearson94/terraform-aws-open-next/blob/v3.0.3/modules/tf-aws-open-next-public-resources/code/xForwardedHost.js (open next v2) and https://github.com/RJPearson94/terraform-aws-open-next/blob/v3.0.3/modules/tf-aws-open-next-public-resources/code/cloudfrontFunctionOpenNextV3.js (open next v3). 
+The module has a local copy of the x-forwarded host CloudFront function code by default. The code can be seen at https://github.com/RJPearson94/terraform-aws-open-next/blob/v3.1.0/modules/tf-aws-open-next-public-resources/code/xForwardedHost.js (open next v2) and https://github.com/RJPearson94/terraform-aws-open-next/blob/v3.1.0/modules/tf-aws-open-next-public-resources/code/cloudfrontFunctionOpenNextV3.js (open next v3). 
 
 This code can be overridden by passing in the javascript function as a string to the `code` argument under the `x_forwarded_host_function` object. An example can be seen below.
 
@@ -720,7 +803,7 @@ x_forwarded_host_function = {
 
 The auth function is deployed if the server function backend_deployment_type is set to EDGE_LAMBDA.
 
-The module has a local copy of the auth function code, which will be deployed by default. The code can be seen at https://github.com/RJPearson94/terraform-aws-open-next/blob/v3.0.3/modules/tf-aws-open-next-public-resources/code/auth/index.js. You can override this to supplying a zip file containing the lambda code with either a local reference or a reference to the zip in an S3 bucket.
+The module has a local copy of the auth function code, which will be deployed by default. The code can be seen at https://github.com/RJPearson94/terraform-aws-open-next/blob/v3.1.0/modules/tf-aws-open-next-public-resources/code/auth/index.js. You can override this to supplying a zip file containing the lambda code with either a local reference or a reference to the zip in an S3 bucket.
 
 Possible values for the auth_function deployment are:
 - NONE 
@@ -814,15 +897,69 @@ EOF
       deployment = optional(string, "NONE")
     }), {})
     cache_policy = optional(object({
-      deployment            = optional(string, "CREATE")
-      id                    = optional(string)
-      default_ttl           = optional(number, 0)
-      max_ttl               = optional(number, 31536000)
-      min_ttl               = optional(number, 0)
-      cookie_behavior       = optional(string, "all")
-      header_behavior       = optional(string, "whitelist")
-      header_items          = optional(list(string))
-      query_string_behavior = optional(string, "all")
+      deployment                    = optional(string, "CREATE")
+      id                            = optional(string)
+      default_ttl                   = optional(number, 0)
+      max_ttl                       = optional(number, 31536000)
+      min_ttl                       = optional(number, 0)
+      cookie_behavior               = optional(string, "all")
+      header_behavior               = optional(string, "whitelist")
+      header_items                  = optional(list(string))
+      query_string_behavior         = optional(string, "all")
+      enable_accept_encoding_brotli = optional(bool)
+      enable_accept_encoding_gzip   = optional(bool)
+    }), {})
+    response_headers = optional(object({
+      deployment = optional(string, "NONE") # NONE, CREATE or USE_EXISTING
+      id         = optional(string)
+      cors_config = optional(object({
+        access_control_allow_credentials = bool
+        access_control_allow_headers     = list(string)
+        access_control_allow_methods     = list(string)
+        access_control_allow_origins     = list(string)
+        access_control_expose_headers    = optional(list(string), [])
+        access_control_max_age_seconds   = optional(number)
+        origin_override                  = bool
+      }))
+      custom_headers_config = optional(list(object({
+        header   = string
+        override = bool
+        value    = string
+      })), [])
+      remove_headers = optional(list(string), [])
+      security_headers_config = optional(object({
+        content_security_policy = optional(object({
+          policy   = string
+          override = bool
+        }))
+        content_type_options = optional(object({
+          override = bool
+        }))
+        frame_options = optional(object({
+          frame_option = string
+          override     = bool
+        }))
+        referrer_policy = optional(object({
+          override = bool
+          policy   = string
+        }))
+        strict_transport_security = optional(object({
+          max_age            = number
+          include_subdomains = optional(bool)
+          override           = bool
+          preload            = optional(bool)
+        }))
+        xss_protection = optional(object({
+          mode_block = optional(bool)
+          override   = bool
+          protection = bool
+          report_uri = optional(string)
+        }))
+      }))
+      server_timing_headers_config = optional(object({
+        enabled       = bool
+        sampling_rate = number
+      }))
     }), {})
   })
   default = {}
@@ -833,12 +970,13 @@ variable "behaviours" {
   type = object({
     custom_error_responses = optional(object({
       path_overrides = optional(map(object({
-        allowed_methods          = optional(list(string))
-        cached_methods           = optional(list(string))
-        cache_policy_id          = optional(string)
-        origin_request_policy_id = optional(string)
-        compress                 = optional(bool)
-        viewer_protocol_policy   = optional(string)
+        allowed_methods            = optional(list(string))
+        cached_methods             = optional(list(string))
+        cache_policy_id            = optional(string)
+        origin_request_policy_id   = optional(string)
+        response_headers_policy_id = optional(string)
+        compress                   = optional(bool)
+        viewer_protocol_policy     = optional(string)
         viewer_request = optional(object({
           type         = string
           arn          = string
@@ -856,12 +994,13 @@ variable "behaviours" {
           arn = string
         }))
       })))
-      allowed_methods          = optional(list(string))
-      cached_methods           = optional(list(string))
-      cache_policy_id          = optional(string)
-      origin_request_policy_id = optional(string)
-      compress                 = optional(bool)
-      viewer_protocol_policy   = optional(string)
+      allowed_methods            = optional(list(string))
+      cached_methods             = optional(list(string))
+      cache_policy_id            = optional(string)
+      origin_request_policy_id   = optional(string)
+      response_headers_policy_id = optional(string)
+      compress                   = optional(bool)
+      viewer_protocol_policy     = optional(string)
       viewer_request = optional(object({
         type         = string
         arn          = string
@@ -885,12 +1024,13 @@ variable "behaviours" {
       paths            = optional(list(string))
       additional_paths = optional(list(string))
       path_overrides = optional(map(object({
-        allowed_methods          = optional(list(string))
-        cached_methods           = optional(list(string))
-        cache_policy_id          = optional(string)
-        origin_request_policy_id = optional(string)
-        compress                 = optional(bool)
-        viewer_protocol_policy   = optional(string)
+        allowed_methods            = optional(list(string))
+        cached_methods             = optional(list(string))
+        cache_policy_id            = optional(string)
+        origin_request_policy_id   = optional(string)
+        response_headers_policy_id = optional(string)
+        compress                   = optional(bool)
+        viewer_protocol_policy     = optional(string)
         viewer_request = optional(object({
           type         = string
           arn          = string
@@ -908,12 +1048,13 @@ variable "behaviours" {
           arn = string
         }))
       })))
-      allowed_methods          = optional(list(string))
-      cached_methods           = optional(list(string))
-      cache_policy_id          = optional(string)
-      origin_request_policy_id = optional(string)
-      compress                 = optional(bool)
-      viewer_protocol_policy   = optional(string)
+      allowed_methods            = optional(list(string))
+      cached_methods             = optional(list(string))
+      cache_policy_id            = optional(string)
+      origin_request_policy_id   = optional(string)
+      response_headers_policy_id = optional(string)
+      compress                   = optional(bool)
+      viewer_protocol_policy     = optional(string)
       viewer_request = optional(object({
         type         = string
         arn          = string
@@ -936,12 +1077,13 @@ variable "behaviours" {
     server = optional(object({
       paths = optional(list(string))
       path_overrides = optional(map(object({
-        allowed_methods          = optional(list(string))
-        cached_methods           = optional(list(string))
-        cache_policy_id          = optional(string)
-        origin_request_policy_id = optional(string)
-        compress                 = optional(bool)
-        viewer_protocol_policy   = optional(string)
+        allowed_methods            = optional(list(string))
+        cached_methods             = optional(list(string))
+        cache_policy_id            = optional(string)
+        origin_request_policy_id   = optional(string)
+        response_headers_policy_id = optional(string)
+        compress                   = optional(bool)
+        viewer_protocol_policy     = optional(string)
         viewer_request = optional(object({
           type         = string
           arn          = string
@@ -959,12 +1101,13 @@ variable "behaviours" {
           arn = string
         }))
       })))
-      allowed_methods          = optional(list(string))
-      cached_methods           = optional(list(string))
-      cache_policy_id          = optional(string)
-      origin_request_policy_id = optional(string)
-      compress                 = optional(bool)
-      viewer_protocol_policy   = optional(string)
+      allowed_methods            = optional(list(string))
+      cached_methods             = optional(list(string))
+      cache_policy_id            = optional(string)
+      origin_request_policy_id   = optional(string)
+      response_headers_policy_id = optional(string)
+      compress                   = optional(bool)
+      viewer_protocol_policy     = optional(string)
       viewer_request = optional(object({
         type         = string
         arn          = string
@@ -990,12 +1133,13 @@ variable "behaviours" {
       })))
       paths = optional(list(string))
       path_overrides = optional(map(object({
-        allowed_methods          = optional(list(string))
-        cached_methods           = optional(list(string))
-        cache_policy_id          = optional(string)
-        origin_request_policy_id = optional(string)
-        compress                 = optional(bool)
-        viewer_protocol_policy   = optional(string)
+        allowed_methods            = optional(list(string))
+        cached_methods             = optional(list(string))
+        cache_policy_id            = optional(string)
+        origin_request_policy_id   = optional(string)
+        response_headers_policy_id = optional(string)
+        compress                   = optional(bool)
+        viewer_protocol_policy     = optional(string)
         viewer_request = optional(object({
           type         = string
           arn          = string
@@ -1013,12 +1157,13 @@ variable "behaviours" {
           arn = string
         }))
       })))
-      allowed_methods          = optional(list(string))
-      cached_methods           = optional(list(string))
-      cache_policy_id          = optional(string)
-      origin_request_policy_id = optional(string)
-      compress                 = optional(bool)
-      viewer_protocol_policy   = optional(string)
+      allowed_methods            = optional(list(string))
+      cached_methods             = optional(list(string))
+      cache_policy_id            = optional(string)
+      origin_request_policy_id   = optional(string)
+      response_headers_policy_id = optional(string)
+      compress                   = optional(bool)
+      viewer_protocol_policy     = optional(string)
       viewer_request = optional(object({
         type         = string
         arn          = string
@@ -1041,12 +1186,13 @@ variable "behaviours" {
     image_optimisation = optional(object({
       paths = optional(list(string))
       path_overrides = optional(map(object({
-        allowed_methods          = optional(list(string))
-        cached_methods           = optional(list(string))
-        cache_policy_id          = optional(string)
-        origin_request_policy_id = optional(string)
-        compress                 = optional(bool)
-        viewer_protocol_policy   = optional(string)
+        allowed_methods            = optional(list(string))
+        cached_methods             = optional(list(string))
+        cache_policy_id            = optional(string)
+        origin_request_policy_id   = optional(string)
+        response_headers_policy_id = optional(string)
+        compress                   = optional(bool)
+        viewer_protocol_policy     = optional(string)
         viewer_request = optional(object({
           type         = string
           arn          = string
@@ -1064,12 +1210,13 @@ variable "behaviours" {
           arn = string
         }))
       })))
-      allowed_methods          = optional(list(string))
-      cached_methods           = optional(list(string))
-      cache_policy_id          = optional(string)
-      origin_request_policy_id = optional(string)
-      compress                 = optional(bool)
-      viewer_protocol_policy   = optional(string)
+      allowed_methods            = optional(list(string))
+      cached_methods             = optional(list(string))
+      cache_policy_id            = optional(string)
+      origin_request_policy_id   = optional(string)
+      response_headers_policy_id = optional(string)
+      compress                   = optional(bool)
+      viewer_protocol_policy     = optional(string)
       viewer_request = optional(object({
         type         = string
         arn          = string
@@ -1260,7 +1407,7 @@ variable "domain_config" {
   description = <<EOF
 Configuration for CloudFront distribution domain
 
-See https://github.com/RJPearson94/terraform-aws-open-next/blob/v3.0.3/docs/domain-config.md for a complete breakdown of the different domain configuration options. 
+See https://github.com/RJPearson94/terraform-aws-open-next/blob/v3.1.0/docs/domain-config.md for a complete breakdown of the different domain configuration options. 
 
 EOF
 
@@ -1288,7 +1435,7 @@ variable "continuous_deployment" {
   description = <<EOF
 Configuration for continuous deployment config for CloudFront
 
-See https://github.com/RJPearson94/terraform-aws-open-next/blob/v3.0.3/docs/continuous-deployments.md for a complete breakdown of how to use continuous deployment. 
+See https://github.com/RJPearson94/terraform-aws-open-next/blob/v3.1.0/docs/continuous-deployments.md for a complete breakdown of how to use continuous deployment. 
 
 EOF
 

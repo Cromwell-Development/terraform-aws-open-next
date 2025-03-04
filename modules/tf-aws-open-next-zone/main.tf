@@ -57,37 +57,53 @@ locals {
 
   zone_origins = merge({
     static_assets = {
-      domain_name  = local.website_bucket_domain_name
-      backend_name = "website-bucket"
-      arn          = null
-      path         = "/${module.s3_assets.origin_asset_path}"
-      auth         = null
-      headers      = null
+      domain_name         = local.website_bucket_domain_name
+      backend_name        = "website-bucket"
+      arn                 = null
+      path                = "/${module.s3_assets.origin_asset_path}"
+      auth                = null
+      headers             = null
+      keepalive_timeout   = null
+      read_timeout        = null
+      connection_attempts = null
+      connection_timeout  = null
     }
     image_optimisation = {
-      domain_name  = var.image_optimisation_function.create ? one(module.image_optimisation_function[*].url_hostnames)[local.staging_alias] : null
-      backend_name = var.image_optimisation_function.create ? one(module.image_optimisation_function[*].name) : null
-      arn          = var.image_optimisation_function.create ? one(module.image_optimisation_function[*].arn) : null
-      path         = null
-      auth         = lookup(local.auth_options, var.image_optimisation_function.backend_deployment_type, null)
-      headers      = null
+      domain_name         = var.image_optimisation_function.create ? one(module.image_optimisation_function[*].url_hostnames)[local.staging_alias] : null
+      backend_name        = var.image_optimisation_function.create ? one(module.image_optimisation_function[*].name) : null
+      arn                 = var.image_optimisation_function.create ? one(module.image_optimisation_function[*].arn) : null
+      path                = null
+      auth                = lookup(local.auth_options, var.image_optimisation_function.backend_deployment_type, null)
+      headers             = null
+      keepalive_timeout   = var.image_optimisation_function.create ? try(coalesce(try(var.image_optimisation_function.origin_timeouts.keepalive_timeout, null), try(var.origin_timeouts.keepalive_timeout, null)), null) : null
+      read_timeout        = var.image_optimisation_function.create ? try(coalesce(try(var.image_optimisation_function.origin_timeouts.read_timeout, null), try(var.origin_timeouts.read_timeout, null)), null) : null
+      connection_attempts = var.image_optimisation_function.create ? try(coalesce(try(var.image_optimisation_function.origin_timeouts.connection_attempts, null), try(var.origin_timeouts.connection_attempts, null)), null) : null
+      connection_timeout  = var.image_optimisation_function.create ? try(coalesce(try(var.image_optimisation_function.origin_timeouts.connection_timeout, null), try(var.origin_timeouts.connection_timeout, null)), null) : null
     }
     },
     local.server_at_edge ? {} : { server = {
-      domain_name  = lookup(module.server_function.url_hostnames, local.staging_alias, null)
-      backend_name = module.server_function.name
-      arn          = module.server_function.arn
-      path         = null
-      auth         = lookup(local.auth_options, var.server_function.backend_deployment_type, null)
-      headers      = null
+      domain_name         = lookup(module.server_function.url_hostnames, local.staging_alias, null)
+      backend_name        = module.server_function.name
+      arn                 = module.server_function.arn
+      path                = null
+      auth                = lookup(local.auth_options, var.server_function.backend_deployment_type, null)
+      headers             = null
+      keepalive_timeout   = try(coalesce(try(var.server_function.origin_timeouts.keepalive_timeout, null), try(var.origin_timeouts.keepalive_timeout, null)), null)
+      read_timeout        = try(coalesce(try(var.server_function.origin_timeouts.read_timeout, null), try(var.origin_timeouts.read_timeout, null)), null)
+      connection_attempts = try(coalesce(try(var.server_function.origin_timeouts.connection_attempts, null), try(var.origin_timeouts.connection_attempts, null)), null)
+      connection_timeout  = try(coalesce(try(var.server_function.origin_timeouts.connection_timeout, null), try(var.origin_timeouts.connection_timeout, null)), null)
     } },
     { for name, additional_server_function in local.additional_server_functions : name => {
-      domain_name  = lookup(module.additional_server_function[name].url_hostnames, local.staging_alias, null)
-      backend_name = module.additional_server_function[name].name
-      arn          = module.additional_server_function[name].arn
-      path         = null
-      auth         = lookup(local.auth_options, try(var.additional_server_functions.function_overrides[name].backend_deployment_type, var.additional_server_functions.backend_deployment_type), null)
-      headers      = null
+      domain_name         = lookup(module.additional_server_function[name].url_hostnames, local.staging_alias, null)
+      backend_name        = module.additional_server_function[name].name
+      arn                 = module.additional_server_function[name].arn
+      path                = null
+      auth                = lookup(local.auth_options, try(var.additional_server_functions.function_overrides[name].backend_deployment_type, var.additional_server_functions.backend_deployment_type), null)
+      headers             = null
+      keepalive_timeout   = try(coalesce(try(var.additional_server_functions.function_overrides[name].origin_timeouts.keepalive_timeout, null), try(var.additional_server_functions.origin_timeouts.keepalive_timeout, null), try(var.origin_timeouts.keepalive_timeout, null)), null)
+      read_timeout        = try(coalesce(try(var.additional_server_functions.function_overrides[name].origin_timeouts.read_timeout, null), try(var.additional_server_functions.origin_timeouts.read_timeout, null), try(var.origin_timeouts.read_timeout, null)), null)
+      connection_attempts = try(coalesce(try(var.additional_server_functions.function_overrides[name].origin_timeouts.connection_attempts, null), try(var.additional_server_functions.origin_timeouts.connection_attempts, null), try(var.origin_timeouts.connection_attempts, null)), null)
+      connection_timeout  = try(coalesce(try(var.additional_server_functions.function_overrides[name].origin_timeouts.connection_timeout, null), try(var.additional_server_functions.origin_timeouts.connection_timeout, null), try(var.origin_timeouts.connection_timeout, null)), null)
     } if try(var.additional_server_functions.function_overrides[name].backend_deployment_type, var.additional_server_functions.backend_deployment_type) != "EDGE_LAMBDA" }
   )
   zone = {
@@ -98,11 +114,11 @@ locals {
 
   user_supplied_behaviours = coalesce(var.behaviours, { custom_error_responses = null, static_assets = null, server = null, image_optimisation = null, additional_origins = {} })
   zone_behaviours = merge(local.user_supplied_behaviours, {
-    static_assets = merge(coalesce(local.user_supplied_behaviours.static_assets, { paths = null, additional_paths = null, path_overrides = null, allowed_methods = null, cached_methods = null, cache_policy_id = null, origin_request_policy_id = null, compress = null, viewer_protocol_policy = null, viewer_request = null, viewer_response = null, origin_request = null, origin_response = null }), {
+    static_assets = merge(coalesce(local.user_supplied_behaviours.static_assets, { paths = null, additional_paths = null, path_overrides = null, allowed_methods = null, cached_methods = null, cache_policy_id = null, origin_request_policy_id = null, response_headers_policy_id = null, compress = null, viewer_protocol_policy = null, viewer_request = null, viewer_response = null, origin_request = null, origin_response = null }), {
       paths            = try(coalesce(try(local.user_supplied_behaviours.static_assets.paths, null), local.open_next_versions.v2 ? null : [for behavior in local.behaviors : behavior.pattern == "*" || startswith(behavior.pattern, "/") ? behavior.pattern : "/${behavior.pattern}" if behavior.origin == "s3"]), null)
       additional_paths = try(coalesce(try(local.user_supplied_behaviours.static_assets.additional_paths, null), module.s3_assets.cloudfront_asset_mappings), [])
     })
-    server = merge(coalesce(local.user_supplied_behaviours.server, { paths = null, path_overrides = null, allowed_methods = null, cached_methods = null, cache_policy_id = null, origin_request_policy_id = null, compress = null, viewer_protocol_policy = null, viewer_request = null, viewer_response = null, origin_request = null, origin_response = null }), {
+    server = merge(coalesce(local.user_supplied_behaviours.server, { paths = null, path_overrides = null, allowed_methods = null, cached_methods = null, cache_policy_id = null, origin_request_policy_id = null, response_headers_policy_id = null, compress = null, viewer_protocol_policy = null, viewer_request = null, viewer_response = null, origin_request = null, origin_response = null }), {
       paths = try(coalesce(try(local.user_supplied_behaviours.server.paths, null), local.open_next_versions.v2 ? null : [for behavior in local.behaviors : behavior.pattern == "*" || startswith(behavior.pattern, "/") ? behavior.pattern : "/${behavior.pattern}" if behavior.origin == "default"]), null)
       origin_request = local.server_at_edge ? {
         arn          = module.server_function.qualified_arn
@@ -110,10 +126,10 @@ locals {
       } : null
       path_overrides = merge(try(local.user_supplied_behaviours.server.path_overrides, {}), { for behavior in local.behaviors : behavior.pattern == "*" || startswith(behavior.pattern, "/") ? behavior.pattern : "/${behavior.pattern}" => { origin_request = { arn = module.edge_function[behavior["edgeFunction"]].qualified_arn, include_body = true } } if behavior.origin == "default" && lookup(behavior, "edgeFunction", null) != null })
     })
-    image_optimisation = merge(coalesce(local.user_supplied_behaviours.image_optimisation, { paths = null, path_overrides = null, allowed_methods = null, cached_methods = null, cache_policy_id = null, origin_request_policy_id = null, compress = null, viewer_protocol_policy = null, viewer_request = null, viewer_response = null, origin_request = null, origin_response = null }), {
+    image_optimisation = merge(coalesce(local.user_supplied_behaviours.image_optimisation, { paths = null, path_overrides = null, allowed_methods = null, cached_methods = null, cache_policy_id = null, origin_request_policy_id = null, response_headers_policy_id = null, compress = null, viewer_protocol_policy = null, viewer_request = null, viewer_response = null, origin_request = null, origin_response = null }), {
       paths = try(coalesce(try(local.user_supplied_behaviours.image_optimisation.paths, null), local.open_next_versions.v2 ? null : [for behavior in local.behaviors : behavior.pattern == "*" || startswith(behavior.pattern, "/") ? behavior.pattern : "/${behavior.pattern}" if behavior.origin == "imageOptimizer"]), null)
     })
-    additional_origins = { for name, additional_server_function in local.additional_server_functions : name => merge(coalesce(local.user_supplied_behaviours.additional_origins, { paths = null, path_overrides = null, allowed_methods = null, cached_methods = null, cache_policy_id = null, origin_request_policy_id = null, compress = null, viewer_protocol_policy = null, viewer_request = null, viewer_response = null, origin_request = null, origin_response = null, origin_reference = null }), {
+    additional_origins = { for name, additional_server_function in local.additional_server_functions : name => merge(coalesce(local.user_supplied_behaviours.additional_origins, { paths = null, path_overrides = null, allowed_methods = null, cached_methods = null, cache_policy_id = null, origin_request_policy_id = null, response_headers_policy_id = null, compress = null, viewer_protocol_policy = null, viewer_request = null, viewer_response = null, origin_request = null, origin_response = null, origin_reference = null }), {
       paths          = try(coalesce(try(local.user_supplied_behaviours.additional_origins[name].paths, null), local.open_next_versions.v2 ? null : [for behavior in local.behaviors : behavior.pattern == "*" || startswith(behavior.pattern, "/") ? behavior.pattern : "/${behavior.pattern}" if behavior.origin == name]), null)
       origin_request = try(local.user_supplied_behaviours.additional_origins[name].origin_request, null)
       path_overrides = merge(try(local.user_supplied_behaviours.additional_origins[name].path_overrides, {}), { for behavior in local.behaviors : behavior.pattern == "*" || startswith(behavior.pattern, "/") ? behavior.pattern : "/${behavior.pattern}" => { origin_request = { arn = module.edge_function[behavior["edgeFunction"]].qualified_arn, include_body = true } } if behavior.origin == name && lookup(behavior, "edgeFunction", null) != null })
@@ -227,6 +243,7 @@ module "public_resources" {
   auth_function             = var.distribution.auth_function
   lambda_url_oac            = var.distribution.lambda_url_oac
   cache_policy              = var.distribution.cache_policy
+  response_headers          = var.distribution.response_headers
 
   behaviours            = local.zone_behaviours
   waf                   = var.waf
@@ -390,6 +407,16 @@ data "aws_iam_policy_document" "deny_outdated_tls" {
   }
 }
 
+resource "aws_s3_bucket_public_access_block" "bucket_public_access_block_public_policy" {
+  count  = local.should_create_website_bucket ? 1 : 0
+  bucket = "${local.prefix}website-bucket${local.suffix}"
+
+  block_public_acls       = var.website_bucket.block_public_acls
+  block_public_policy     = var.website_bucket.block_public_policy
+  ignore_public_acls      = var.website_bucket.ignore_public_acls
+  restrict_public_buckets = var.website_bucket.restrict_public_buckets
+}
+
 module "s3_assets" {
   source = "../tf-aws-open-next-s3-assets"
 
@@ -435,7 +462,7 @@ module "edge_function" {
   }
 
   run_at_edge = true
-  runtime     = try(coalesce(try(var.edge_functions.function_overrides[each.key].runtime, null), try(var.edge_functions.runtime, null)), null)
+  runtime     = try(coalesce(try(var.edge_functions.function_overrides[each.key].runtime, null), try(var.edge_functions.runtime, null)), "nodejs20.x")
   handler     = try(coalesce(try(var.edge_functions.function_overrides[each.key].handler, null), try(var.edge_functions.handler, null)), "handler.handler")
 
   memory_size = try(coalesce(try(var.edge_functions.function_overrides[each.key].memory_size, null), try(var.edge_functions.memory_size, null)), null)
@@ -499,11 +526,13 @@ module "server_function" {
   )
 
   environment_variables = local.server_at_edge ? {} : local.server_function_env_variables
+  layers                = try(coalesce(try(var.server_function.layers, null), try(var.layers, null)), null)
 
   architecture   = try(coalesce(var.server_function.function_architecture, var.function_architecture), "x86_64")
   cloudwatch_log = local.log_groups["default_server"] != null ? merge(local.log_groups["default_server"], local.log_groups["default_server"].deployment == "SHARED_PER_ZONE" ? { deployment = "USE_EXISTING", name = one(aws_cloudwatch_log_group.log_group[*].name) } : {}) : null
   iam            = try(coalesce(var.server_function.iam, var.iam), null)
   vpc            = try(coalesce(var.server_function.vpc, var.vpc), null)
+  xray_tracing   = try(coalesce(var.server_function.xray_tracing, var.xray_tracing), null)
 
   prefix = var.prefix
   suffix = var.suffix
@@ -563,6 +592,8 @@ module "additional_server_function" {
   memory_size = try(var.additional_server_functions.function_overrides[each.key].memory_size, var.additional_server_functions.memory_size)
   timeout     = try(var.additional_server_functions.function_overrides[each.key].timeout, var.additional_server_functions.timeout)
 
+  layers = try(coalesce(try(var.additional_server_functions.function_overrides[each.key].layers, null), try(var.additional_server_functions.layers, null), try(var.layers, null)), null)
+
   additional_iam_policies = try(coalesce(try(var.additional_server_functions.function_overrides[each.key].additional_iam_policies, null), try(var.additional_server_functions.additional_iam_policies, null)), [])
   iam_policy_statements = concat(
     try(coalesce(try(var.additional_server_functions.function_overrides[each.key].iam_policies.include_bucket_access, null), try(var.additional_server_functions.iam_policies.include_bucket_access, null)), false) == true ? local.cache_bucket_iam_policies : [],
@@ -581,6 +612,7 @@ module "additional_server_function" {
   cloudwatch_log = local.log_groups[each.key] != null ? merge(local.log_groups[each.key], local.log_groups[each.key].deployment == "SHARED_PER_ZONE" ? { deployment = "USE_EXISTING", name = one(aws_cloudwatch_log_group.log_group[*].name) } : {}) : null
   iam            = try(var.additional_server_functions.function_overrides[each.key].iam, var.additional_server_functions.iam)
   vpc            = try(var.additional_server_functions.function_overrides[each.key].vpc, var.additional_server_functions.vpc)
+  xray_tracing   = try(coalesce(try(var.additional_server_functions.function_overrides[each.key].xray_tracing, null), try(var.additional_server_functions.xray_tracing, null), try(var.xray_tracing, null)), null)
 
   prefix = var.prefix
   suffix = var.suffix
@@ -673,10 +705,13 @@ module "warmer_function" {
     }
   ]
 
+  layers = try(coalesce(var.warmer_function.layers, var.layers), null)
+
   architecture   = try(coalesce(var.warmer_function.function_architecture, var.function_architecture), null)
   cloudwatch_log = local.log_groups["warmer"] != null ? merge(local.log_groups["warmer"], local.log_groups["warmer"].deployment == "SHARED_PER_ZONE" ? { deployment = "USE_EXISTING", name = one(aws_cloudwatch_log_group.log_group[*].name) } : {}) : null
   iam            = try(coalesce(var.warmer_function.iam, var.iam), null)
   vpc            = try(coalesce(var.warmer_function.vpc, var.vpc), null)
+  xray_tracing   = try(coalesce(var.warmer_function.xray_tracing, var.xray_tracing), null)
 
   prefix = var.prefix
   suffix = var.suffix
@@ -740,6 +775,8 @@ module "image_optimisation_function" {
   cloudwatch_log = local.log_groups["image_optimisation"] != null ? merge(local.log_groups["image_optimisation"], local.log_groups["image_optimisation"].deployment == "SHARED_PER_ZONE" ? { deployment = "USE_EXISTING", name = one(aws_cloudwatch_log_group.log_group[*].name) } : {}) : null
   iam            = try(coalesce(var.image_optimisation_function.iam, var.iam), null)
   vpc            = try(coalesce(var.image_optimisation_function.vpc, var.vpc), null)
+  layers         = try(coalesce(var.image_optimisation_function.layers, var.layers), null)
+  xray_tracing   = try(coalesce(var.image_optimisation_function.xray_tracing, var.xray_tracing), null)
 
   prefix = var.prefix
   suffix = var.suffix
@@ -817,6 +854,8 @@ module "revalidation_function" {
   cloudwatch_log = local.log_groups["revalidation"] != null ? merge(local.log_groups["revalidation"], local.log_groups["revalidation"].deployment == "SHARED_PER_ZONE" ? { deployment = "USE_EXISTING", name = one(aws_cloudwatch_log_group.log_group[*].name) } : {}) : null
   iam            = try(coalesce(var.revalidation_function.iam, var.iam), null)
   vpc            = try(coalesce(var.revalidation_function.vpc, var.vpc), null)
+  layers         = try(coalesce(var.revalidation_function.layers, var.layers), null)
+  xray_tracing   = try(coalesce(var.revalidation_function.xray_tracing, var.xray_tracing), null)
 
   prefix = var.prefix
   suffix = var.suffix
