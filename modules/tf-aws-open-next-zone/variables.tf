@@ -822,10 +822,10 @@ EOF
       header_items          = optional(list(string))
       query_string_behavior = optional(string, "all")
     }), {})
-    logging_enabled = optional(bool, false)
-    logging_include_cookies = optional(bool, false)
+    logging_enabled            = optional(bool, false)
+    logging_include_cookies    = optional(bool, false)
     logging_bucket_domain_name = optional(string, "")
-    logging_bucket_prefix = optional(string, "")
+    logging_bucket_prefix      = optional(string, "")
   })
   default = {}
 }

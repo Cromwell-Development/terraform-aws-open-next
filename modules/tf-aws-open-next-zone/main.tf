@@ -218,19 +218,19 @@ module "public_resources" {
   prefix = var.prefix
   suffix = var.suffix
 
-  enabled                   = var.distribution.enabled
-  ipv6_enabled              = var.distribution.ipv6_enabled
-  http_version              = var.distribution.http_version
-  price_class               = var.distribution.price_class
-  geo_restrictions          = var.distribution.geo_restrictions
-  x_forwarded_host_function = var.distribution.x_forwarded_host_function
-  auth_function             = var.distribution.auth_function
-  lambda_url_oac            = var.distribution.lambda_url_oac
-  cache_policy              = var.distribution.cache_policy
-  logging_enabled = var.distribution.logging_enabled
-  logging_include_cookies = var.distribution.logging_include_cookies
+  enabled                    = var.distribution.enabled
+  ipv6_enabled               = var.distribution.ipv6_enabled
+  http_version               = var.distribution.http_version
+  price_class                = var.distribution.price_class
+  geo_restrictions           = var.distribution.geo_restrictions
+  x_forwarded_host_function  = var.distribution.x_forwarded_host_function
+  auth_function              = var.distribution.auth_function
+  lambda_url_oac             = var.distribution.lambda_url_oac
+  cache_policy               = var.distribution.cache_policy
+  logging_enabled            = var.distribution.logging_enabled
+  logging_include_cookies    = var.distribution.logging_include_cookies
   logging_bucket_domain_name = var.distribution.logging_bucket_domain_name
-  logging_bucket_prefix = var.distribution.logging_bucket_prefix
+  logging_bucket_prefix      = var.distribution.logging_bucket_prefix
 
   behaviours            = local.zone_behaviours
   waf                   = var.waf

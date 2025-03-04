@@ -670,8 +670,8 @@ resource "aws_cloudfront_distribution" "production_distribution" {
     for_each = var.logging_enabled ? ["true"] : []
     content {
       include_cookies = var.logging_include_cookies
-      bucket = var.logging_bucket_domain_name
-      prefix = length(var.logging_bucket_prefix) > 0 ? var.logging_bucket_prefix : null
+      bucket          = var.logging_bucket_domain_name
+      prefix          = length(var.logging_bucket_prefix) > 0 ? var.logging_bucket_prefix : null
     }
   }
   dynamic "ordered_cache_behavior" {
@@ -824,8 +824,8 @@ resource "aws_cloudfront_distribution" "staging_distribution" {
     for_each = var.logging_enabled ? ["true"] : []
     content {
       include_cookies = var.logging_include_cookies
-      bucket = var.logging_bucket_domain_name
-      prefix = length(var.logging_bucket_prefix) > 0 ? var.logging_bucket_prefix : null
+      bucket          = var.logging_bucket_domain_name
+      prefix          = length(var.logging_bucket_prefix) > 0 ? var.logging_bucket_prefix : null
     }
   }
   dynamic "ordered_cache_behavior" {
