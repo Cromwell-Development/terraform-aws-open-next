@@ -300,32 +300,32 @@ data "aws_iam_policy_document" "combined" {
 data "aws_iam_policy_document" "bucket_policy" {
   count = local.should_create_website_bucket && var.website_bucket.create_bucket_policy && local.create_distribution ? 1 : 0
 
-    statement {
+  statement {
     sid    = "AllowCloudFront"
     effect = "Allow"
 
     actions = [
-          "s3:GetObject"
-        ]
+      "s3:GetObject"
+    ]
 
     resources = [
-          one(aws_s3_bucket.bucket[*].arn),
-          "${one(aws_s3_bucket.bucket[*].arn)}/*"
+      one(aws_s3_bucket.bucket[*].arn),
+      "${one(aws_s3_bucket.bucket[*].arn)}/*"
     ]
-    
+
     principals {
       type        = "Service"
       identifiers = ["cloudfront.amazonaws.com"]
     }
 
     condition {
-    test = "StringEquals"
-    variable = "AWS:SourceArn"
-    values = [
-      "compact([try(one(module.public_resources[*].arn), null), try(one(module.public_resources[*].staging_arn), null)])"
-    ]
-          }
+      test     = "StringEquals"
+      variable = "AWS:SourceArn"
+      values = [
+        "compact([try(one(module.public_resources[*].arn), null), try(one(module.public_resources[*].staging_arn), null)])"
+      ]
     }
+  }
 }
 
 data "aws_iam_policy_document" "deny_insecure_transport" {
@@ -340,8 +340,8 @@ data "aws_iam_policy_document" "deny_insecure_transport" {
     ]
 
     resources = [
-       one(aws_s3_bucket.bucket[*].arn),
-       "${one(aws_s3_bucket.bucket[*].arn)}/*"
+      one(aws_s3_bucket.bucket[*].arn),
+      "${one(aws_s3_bucket.bucket[*].arn)}/*"
     ]
 
     principals {
@@ -371,8 +371,8 @@ data "aws_iam_policy_document" "deny_outdated_tls" {
     ]
 
     resources = [
-     one(aws_s3_bucket.bucket[*].arn),
-     "${one(aws_s3_bucket.bucket[*].arn)}/*"
+      one(aws_s3_bucket.bucket[*].arn),
+      "${one(aws_s3_bucket.bucket[*].arn)}/*"
     ]
 
     principals {

@@ -687,15 +687,15 @@ If deployment is set to `NONE`, then arn, region, name & domain_name are require
 EOF
 
   type = object({
-    deployment           = optional(string, "CREATE")
-    create_bucket_policy = optional(bool, true)
-    force_destroy        = optional(bool, false)
-    arn                  = optional(string)
-    region               = optional(string)
-    name                 = optional(string)
-    domain_name          = optional(string)
+    deployment              = optional(string, "CREATE")
+    create_bucket_policy    = optional(bool, true)
+    force_destroy           = optional(bool, false)
+    arn                     = optional(string)
+    region                  = optional(string)
+    name                    = optional(string)
+    domain_name             = optional(string)
     deny_insecure_transport = optional(bool, false)
-    deny_outdated_tls = optional(bool, false)
+    deny_outdated_tls       = optional(bool, false)
   })
   default = {}
 }
