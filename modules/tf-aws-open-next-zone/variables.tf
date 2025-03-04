@@ -766,13 +766,17 @@ If deployment is set to `NONE`, then arn, region, name & domain_name are require
 EOF
 
   type = object({
-    deployment           = optional(string, "CREATE")
-    create_bucket_policy = optional(bool, true)
-    force_destroy        = optional(bool, false)
-    arn                  = optional(string)
-    region               = optional(string)
-    name                 = optional(string)
-    domain_name          = optional(string)
+    deployment              = optional(string, "CREATE")
+    create_bucket_policy    = optional(bool, true)
+    force_destroy           = optional(bool, false)
+    arn                     = optional(string)
+    region                  = optional(string)
+    name                    = optional(string)
+    domain_name             = optional(string)
+    block_public_acls       = optional(bool, true)
+    block_public_policy     = optional(bool, true)
+    ignore_public_acls      = optional(bool, true)
+    restrict_public_buckets = optional(bool, true)
   })
   default = {}
 }
