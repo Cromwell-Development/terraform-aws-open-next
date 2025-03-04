@@ -779,7 +779,7 @@ EOF
     region                  = optional(string)
     name                    = optional(string)
     domain_name             = optional(string)
-    versioning           = optional(string, "Disabled")
+    versioning              = optional(string, "Disabled")
     deny_insecure_transport = optional(bool, false)
     deny_outdated_tls       = optional(bool, false)
     block_public_acls       = optional(bool, true)
