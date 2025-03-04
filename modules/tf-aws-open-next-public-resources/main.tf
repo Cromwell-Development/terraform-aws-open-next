@@ -366,23 +366,23 @@ locals {
     } if additional_rule.enabled] : []
   )
 
-temp_aliases = var.domain_config != null ? {
-  for hosted_zone in var.domain_config.hosted_zones :
-  join(".", compact([var.domain_config.sub_domain, hosted_zone.name])) => {alias = distinct (flatten([hosted_zone.alias,var.domain_config.include_www || hosted_zone.include_www ? ["www2"] : []])), include_www = hosted_zone.include_www}
-} : {}
-aliases = flatten (concat([for alias, v in local.temp_aliases : [for sub in v.alias : "${sub}.${alias}"]] , [for alias, v in local.temp_aliases : alias]))
-temp_route53_entries = try(var.domain_config.create_route53_entries, false) == true ? {for hosted_zone in var.domain_config.hosted_zones : join("-", compact([hosted_zone.name, hosted_zone.id, hosted_zone.private_zone])) => {
+  temp_aliases = var.domain_config != null ? {
+    for hosted_zone in var.domain_config.hosted_zones :
+    join(".", compact([var.domain_config.sub_domain, hosted_zone.name])) => { alias = distinct(flatten([hosted_zone.alias, var.domain_config.include_www || hosted_zone.include_www ? ["www2"] : []])), include_www = hosted_zone.include_www }
+  } : {}
+  aliases = flatten(concat([for alias, v in local.temp_aliases : [for sub in v.alias : "${sub}.${alias}"]], [for alias, v in local.temp_aliases : alias]))
+  temp_route53_entries = try(var.domain_config.create_route53_entries, false) == true ? { for hosted_zone in var.domain_config.hosted_zones : join("-", compact([hosted_zone.name, hosted_zone.id, hosted_zone.private_zone])) => {
     name            = join(".", compact([var.domain_config.sub_domain, hosted_zone.name]))
-    zone_id         = coalesce(hosted_zone.id, try( data.aws_route53_zone.hosted_zone[join("-", compact([hosted_zone.name, hosted_zone.private_zone]))].zone_id, null))
+    zone_id         = coalesce(hosted_zone.id, try(data.aws_route53_zone.hosted_zone[join("-", compact([hosted_zone.name, hosted_zone.private_zone]))].zone_id, null))
     allow_overwrite = var.domain_config.route53_record_allow_overwrite
   } } : {}
-route53_entries = merge({for index,route53_entry in flatten(var.domain_config != null ? [for hosted_zone in var.domain_config.hosted_zones : [for alias in distinct (flatten([hosted_zone.alias,var.domain_config.include_www ||
- hosted_zone.include_www ? ["www2"] : []])) : tomap ({ 
- id = "${alias}_${join("-", compact([hosted_zone.name, hosted_zone.id, hosted_zone.private_zone]))}", 
- name            = join(".", compact([alias, var.domain_config.sub_domain, hosted_zone.name])) 
- zone_id = coalesce(hosted_zone.id, try(data.aws_route53_zone.hosted_zone[join("-", compact([hosted_zone.name, hosted_zone.private_zone]))].zone_id, null)),
- allow_overwrite = var.domain_config.route53_record_allow_overwrite
- })]] : []) : route53_entry.id => {name = route53_entry.name, zone_id = route53_entry.zone_id, allow_overwrite = route53_entry.allow_overwrite}}, local.temp_route53_entries)
+  route53_entries = merge({ for index, route53_entry in flatten(var.domain_config != null ? [for hosted_zone in var.domain_config.hosted_zones : [for alias in distinct(flatten([hosted_zone.alias, var.domain_config.include_www ||
+    hosted_zone.include_www ? ["www2"] : []])) : tomap({
+    id              = "${alias}_${join("-", compact([hosted_zone.name, hosted_zone.id, hosted_zone.private_zone]))}",
+    name            = join(".", compact([alias, var.domain_config.sub_domain, hosted_zone.name]))
+    zone_id         = coalesce(hosted_zone.id, try(data.aws_route53_zone.hosted_zone[join("-", compact([hosted_zone.name, hosted_zone.private_zone]))].zone_id, null)),
+    allow_overwrite = var.domain_config.route53_record_allow_overwrite
+  })]] : []) : route53_entry.id => { name = route53_entry.name, zone_id = route53_entry.zone_id, allow_overwrite = route53_entry.allow_overwrite } }, local.temp_route53_entries)
 }
 
 # Functions
