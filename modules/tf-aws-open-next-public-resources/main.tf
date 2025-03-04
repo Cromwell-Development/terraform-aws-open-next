@@ -666,6 +666,7 @@ resource "aws_cloudfront_distribution" "production_distribution" {
   is_ipv6_enabled = var.ipv6_enabled
   http_version    = var.http_version
   web_acl_id      = local.web_acl_id
+
   dynamic "logging_config" {
     for_each = var.logging_enabled ? ["true"] : []
     content {
@@ -820,6 +821,7 @@ resource "aws_cloudfront_distribution" "staging_distribution" {
   is_ipv6_enabled = var.ipv6_enabled
   http_version    = var.http_version
   web_acl_id      = local.web_acl_id
+
   dynamic "logging_config" {
     for_each = var.logging_enabled ? ["true"] : []
     content {

@@ -79,9 +79,11 @@ variable "logging_bucket_domain_name" {
   type        = string
   default     = ""
 }
+
 variable "logging_bucket_prefix" {
   description = "The prefix to use for CloudFront Distributions logs"
   type        = string
+  default     = ""
 }
 
 variable "auth_function" {
