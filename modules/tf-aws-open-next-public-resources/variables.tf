@@ -895,6 +895,8 @@ variable "domain_config" {
       name         = string
       id           = optional(string)
       private_zone = optional(bool, false)
+      include_www  = optional(bool, false)
+      alias        = optional(list(string), [])
     }))
     create_route53_entries         = optional(bool, true)
     route53_record_allow_overwrite = optional(bool, true)
