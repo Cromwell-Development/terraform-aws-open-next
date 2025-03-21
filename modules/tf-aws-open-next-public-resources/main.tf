@@ -706,6 +706,14 @@ resource "aws_cloudfront_distribution" "website_distribution" {
   http_version    = var.http_version
   web_acl_id      = local.web_acl_id
 
+  dynamic "logging_config" {
+    for_each = var.logging_enabled ? ["true"] : []
+    content {
+      include_cookies = var.logging_include_cookies
+      bucket          = var.logging_bucket_domain_name
+      prefix          = length(var.logging_bucket_prefix) > 0 ? var.logging_bucket_prefix : null
+    }
+  }
   dynamic "ordered_cache_behavior" {
     for_each = [for ordered_cache_behavior in local.ordered_cache_behaviors : ordered_cache_behavior if ordered_cache_behavior.path_pattern != "*"]
 
