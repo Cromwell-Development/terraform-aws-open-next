@@ -506,6 +506,10 @@ resource "aws_cloudfront_cache_policy" "cache_policy" {
   parameters_in_cache_key_and_forwarded_to_origin {
     cookies_config {
       cookie_behavior = try(var.cache_policy.cookie_behavior, "all")
+
+      cookies {
+        items = try(var.cache_policy.cookie_items, null)
+      }
     }
 
     headers_config {
@@ -518,6 +522,10 @@ resource "aws_cloudfront_cache_policy" "cache_policy" {
 
     query_strings_config {
       query_string_behavior = try(var.cache_policy.query_string_behavior, "all")
+
+      query_strings {
+        items = try(var.cache_policy.query_string_items, null)
+      }
     }
 
     enable_accept_encoding_brotli = try(var.cache_policy.enable_accept_encoding_brotli, null)
